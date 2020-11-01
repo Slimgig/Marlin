@@ -35,6 +35,7 @@
 #endif
 
 #define PCT_TO_PWM(X) ((X) * 255 / 100)
+#define PCT_TO_SERVO(X) ((X) * 180 / 100)
 
 #ifndef SPEED_POWER_INTERCEPT
   #define SPEED_POWER_INTERCEPT 0
@@ -45,7 +46,7 @@
 class SpindleLaser {
 public:
   static constexpr float
-    min_pct = TERN(CUTTER_POWER_RELATIVE, 0, TERN(SPINDLE_FEATURE, round(100.0f * (SPEED_POWER_MIN) / (SPEED_POWER_MAX)), SPEED_POWER_MIN))),
+    min_pct = TERN(CUTTER_POWER_RELATIVE, 0, TERN(SPINDLE_FEATURE, round(100.0f * (SPEED_POWER_MIN) / (SPEED_POWER_MAX)), SPEED_POWER_MIN)),
     max_pct = TERN(SPINDLE_FEATURE, 100, SPEED_POWER_MAX);
 
   static const inline uint8_t pct_to_ocr(const float pct) { return uint8_t(PCT_TO_PWM(pct)); }
@@ -61,6 +62,7 @@ public:
 
   // Convert a cpower (e.g., SPEED_POWER_STARTUP) to unit power (upwr, upower),
   // which can be PWM, Percent, or RPM (rel/abs).
+  // which can be PWM, Percent, Servo angle, or RPM (rel/abs).
   static const inline cutter_power_t cpwr_to_upwr(const cutter_cpower_t cpwr) { // STARTUP power to Unit power
     const cutter_power_t upwr = (
       #if ENABLED(SPINDLE_FEATURE)
@@ -69,6 +71,8 @@ public:
           cpwr                            // to RPM
         #elif CUTTER_UNIT_IS(PERCENT)     // to PCT
           cpwr_to_pct(cpwr)
+        #elif CUTTER_UNIT_IS(SERVO)       // to SERVO angle
+          PCT_TO_SERVO(cpwr_to_pct(cpwr))
         #else                             // to PWM
           PCT_TO_PWM(cpwr_to_pct(cpwr))
         #endif
